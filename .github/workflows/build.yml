@@ -1,0 +1,45 @@
+name: Now in Android Build (Sanity Check)
+
+on:
+  workflow_dispatch: # Manual
+
+jobs:
+  build-benchmark:
+    name: Build Google Reference App
+    runs-on: ubuntu-latest
+    
+    # Mantenemos tu filtro de rama
+    if: github.ref == 'refs/heads/team-devsecops'
+
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      # Now in Android requiere JDK 17
+      - name: Configurar JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      # PASO CLAVE: Este repo es pesado. Aumentamos la memoria de Gradle.
+      # Creamos un gradle.properties básico al vuelo para optimizar la RAM del runner.
+      - name: Optimizar Memoria Gradle
+        run: |
+          mkdir -p ~/.gradle
+          echo "org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8 -XX:+UseParallelGC" > ~/.gradle/gradle.properties
+
+      - name: Dar permisos al Gradlew
+        run: chmod +x gradlew
+
+      # Construimos la variante 'demoDebug' que es la estándar de este proyecto
+      - name: Compilar Demo Debug
+        run: ./gradlew assembleDemoDebug --stacktrace
+
+      - name: Subir Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nowinandroid-apk
+          path: app/build/outputs/apk/demo/debug/*.apk
+          retention-days: 1
