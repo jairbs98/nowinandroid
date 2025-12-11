@@ -1,21 +1,19 @@
-name: Now in Android Build (Sanity Check)
+name: Sanity Check (Now in Android)
 
 on:
-  workflow_dispatch: # Manual
+  workflow_dispatch: # Ejecución 100% manual en cualquier rama
 
 jobs:
   build-benchmark:
     name: Build Google Reference App
     runs-on: ubuntu-latest
-    
-    # Mantenemos tu filtro de rama
-    if: github.ref == 'refs/heads/team-001'
+    # Sin filtro 'if', se ejecuta donde tú le digas en la interfaz
 
     steps:
       - name: Checkout del código
         uses: actions/checkout@v4
 
-      # Now in Android requiere JDK 17
+      # Now in Android requiere JDK 17 estrictamente
       - name: Configurar JDK 17
         uses: actions/setup-java@v4
         with:
@@ -23,8 +21,8 @@ jobs:
           java-version: '17'
           cache: 'gradle'
 
-      # PASO CLAVE: Este repo es pesado. Aumentamos la memoria de Gradle.
-      # Creamos un gradle.properties básico al vuelo para optimizar la RAM del runner.
+      # Optimización de Memoria (Staff Tip)
+      # Las apps modernas consumen mucha RAM. Configuramos Gradle para no matar al runner.
       - name: Optimizar Memoria Gradle
         run: |
           mkdir -p ~/.gradle
@@ -33,13 +31,14 @@ jobs:
       - name: Dar permisos al Gradlew
         run: chmod +x gradlew
 
-      # Construimos la variante 'demoDebug' que es la estándar de este proyecto
+      # En 'Now in Android', la variante estándar es 'demoDebug'.
+      # Usamos --stacktrace para ver detalles si algo falla.
       - name: Compilar Demo Debug
         run: ./gradlew assembleDemoDebug --stacktrace
 
       - name: Subir Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: nowinandroid-apk
+          name: niad-apk-debug
           path: app/build/outputs/apk/demo/debug/*.apk
           retention-days: 1
